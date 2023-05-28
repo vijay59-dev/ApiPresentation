@@ -1,0 +1,7 @@
+import string
+
+user_input = input("Enter your input to be transformed: ")
+user_output = ''.join(
+    i.upper() if i in string.ascii_lowercase else i.lower() if i in string.ascii_uppercase else i
+    for i in user_input)
+print(user_output)
