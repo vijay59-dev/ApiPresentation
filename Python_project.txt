@@ -1,7 +1,122 @@
-import string
+import random
+from itertools import combinations
 
-user_input = input("Enter your input to be transformed: ")
-user_output = ''.join(
-    i.upper() if i in string.ascii_lowercase else i.lower() if i in string.ascii_uppercase else i
-    for i in user_input)
-print(user_output)
+
+class TicTacToe:
+    board = [None, None, None, None, None, None, None, None, None]
+    win_patterns = [('0', '3', '6'), ('0', '1', '2'), ('2', '5', '8'), ('3', '4', '5'), ('6', '7', '8'),
+                    ('0', '4', '8'),
+                    ('2', '4', '6'), ('1', '4', '7')]
+    turns_taken = 0
+    players_label = ['X', 'O']
+
+# To print the board
+    def print_dashboard(self):
+        for i in [0, 3, 6]:
+            print("\t    |      |")
+            print("\t {}  |  {}   | {} ".format(self.board[i] if self.board[i] else ' ',
+                                                self.board[i + 1] if self.board[i + 1] else ' ',
+                                                self.board[i + 2] if self.board[i + 2] else ' '))
+            if i != 6:
+                print('\t____|______|_____')
+
+# CPU will start the game first
+    def cpu_first_turn(self):
+        place_to_mark = int(random.choice(list(random.choice(self.win_patterns))))
+        self.board[place_to_mark] = self.players_label[0]
+        self.turns_taken += 1
+        self.print_dashboard()
+
+    def cpu_second_turn(self):
+        first_cpu_turn = [str(i) for i, value in enumerate(self.board) if value == self.players_label[0]]
+        user_place = [str(i) for i, value in enumerate(self.board) if value == self.players_label[1]]
+        strategic_turn = [i for i in self.win_patterns if first_cpu_turn[0] in i if user_place[0] not in i]
+        place_to_mark = None
+        if len(strategic_turn) > 1:
+            place_to_mark = int(random.choice(list(random.choice(strategic_turn))))
+        else:
+            place_to_mark = int(random.choice(list(strategic_turn[0])))
+        self.board[place_to_mark] = self.players_label[0]
+        self.turns_taken += 1
+        self.print_dashboard()
+
+# user turn method
+    def user_turn(self):
+        place_to_mark = int(input('Please enter the position you wanna mark from 1 to 8 row wise: '))
+        if self.board[place_to_mark - 1] is None:
+            self.board[place_to_mark - 1] = self.players_label[1]
+            self.turns_taken += 1
+        else:
+            exit('learn some game ethics, then come n play')
+
+    def check_winner(self):
+        check_user_poistion = [str(i) for i, value in enumerate(self.board) if value == self.players_label[1]]
+        check_cpu_poistion = [str(i) for i, value in enumerate(self.board) if value == self.players_label[0]]
+        if len(set(combinations(check_cpu_poistion, 3)).intersection(self.win_patterns)) > 0:
+            exit('CPU Win')
+        elif len(set(combinations(check_user_poistion, 3)).intersection(self.win_patterns)) > 0:
+            exit("Player win")
+
+    def contradict_user_turn(self):
+        empty_positions = sorted([i for i in range(len(self.board)) if self.board[i] is None])
+        check_user_poistion = [str(i) for i, value in enumerate(self.board) if value == self.players_label[1]]
+        check_cpu_poistion = [str(i) for i, value in enumerate(self.board) if value == self.players_label[0]]
+
+        winning_position = sorted([int(i) for i in self.return_list_to_contradict_user(check_cpu_poistion)])
+        place_to_mark = None
+
+        # check whether the user is about to win , if yes then contradict user
+        contradict_position = sorted([int(i) for i in self.return_list_to_contradict_user(check_user_poistion)])
+
+        if winning_position and self.turns_taken > 3:
+            place_to_mark = random.choice(winning_position)
+        elif contradict_position and self.turns_taken > 3:
+            place_to_mark = random.choice(contradict_position)
+        else:
+            place_to_mark = random.choice(empty_positions)
+
+
+
+
+        # if winning_position:
+        #     place_to_mark = random.choice(winning_position)
+        # elif self.turns_taken > 3:
+        #     contradict_position = sorted([int(i) for i in self.return_list_to_contradict_user(check_user_poistion)])
+        #     if contradict_position:
+        #        place_to_mark = random.choice(contradict_position)
+        #     else:
+        #         place_to_mark = random.choice(empty_positions)
+        # else:
+        #     place_to_mark = random.choice(empty_positions)
+
+        self.board[place_to_mark] = self.players_label[0]
+        self.turns_taken += 1
+        self.print_dashboard()
+
+    def return_list_to_contradict_user(self, my_pattern_list):
+        my_pattern = list(combinations(sorted(my_pattern_list), 2))
+        my_temp_list = []
+        for my_pattern_item in my_pattern:
+            for win_pattern_item in self.win_patterns:
+                if set(my_pattern_item).issubset(win_pattern_item):
+                    my_temp_list.extend(list(set(win_pattern_item).difference(my_pattern_item)))
+
+        empty_positions = sorted([str(i) for i in range(len(self.board)) if self.board[i] is None])
+        my_temp_list = list(set(my_temp_list).intersection(empty_positions))
+
+        return my_temp_list
+
+
+game = TicTacToe()
+game.cpu_first_turn()
+game.user_turn()
+game.cpu_second_turn()
+print('\n')
+for number_of_turns in range(len(game.board) // 3):
+    game.user_turn()
+    if game.turns_taken >= 4:
+        game.check_winner()
+    game.contradict_user_turn()
+    if game.turns_taken >= 4:
+        game.check_winner()
+exit('Thank you for playing. you are good. but it\'s Draw')
